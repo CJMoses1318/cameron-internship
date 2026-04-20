@@ -2,12 +2,10 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Slider from "react-slick";
 import Skeleton from "../UI/Skeleton";
+import { fetchNewItems } from "../../api/nftApi";
 import "./NewItems.css";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
-
-const NEW_ITEMS_API =
-  "https://us-central1-nft-cloud-functions.cloudfunctions.net/newItems";
 
 const formatCountdown = (expiryDate, now) => {
   if (!expiryDate) {
@@ -50,32 +48,8 @@ const NewItems = () => {
         setIsLoading(true);
         setError("");
 
-        const response = await fetch(NEW_ITEMS_API, {
-          signal: controller.signal,
-        });
-
-        if (!response.ok) {
-          throw new Error(`Request failed with status ${response.status}`);
-        }
-
-        const data = await response.json();
-
-        if (!Array.isArray(data)) {
-          throw new Error("Invalid response format");
-        }
-
-        const mappedItems = data.slice(0, 7).map((item) => ({
-          id: item.id,
-          nftId: item.nftId,
-          authorImage: item.authorImage || "",
-          nftImage: item.nftImage || "",
-          title: item.title || "Untitled",
-          price: typeof item.price === "number" ? item.price : 0,
-          likes: typeof item.likes === "number" ? item.likes : 0,
-          expiryDate: item.expiryDate ?? null,
-        }));
-
-        setItems(mappedItems);
+        const data = await fetchNewItems(controller.signal);
+        setItems(data.slice(0, 7));
       } catch (fetchError) {
         if (fetchError.name !== "AbortError") {
           setError("Unable to load new items right now.");

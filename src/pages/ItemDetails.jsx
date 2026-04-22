@@ -1,26 +1,64 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import EthImage from "../images/ethereum.svg";
 import { Link, useParams } from "react-router-dom";
 import AuthorImage from "../images/author_thumbnail.jpg";
+import AuthorBanner from "../images/author_banner.jpg";
 import nftImage from "../images/nftImage.jpg";
 import { useExploreItem } from "../hooks/useExploreItem";
 import { useScrollRestoration } from "../hooks/useScrollRestoration";
 import ImageWithFallback from "../components/UI/ImageWithFallback";
 
-const PLACEHOLDER_AUTHOR_ID = "83937449";
+const TOP_SELLERS_URL =
+  "https://us-central1-nft-cloud-functions.cloudfunctions.net/topSellers";
+const FALLBACK_AUTHOR_ID = "1";
 
 const ItemDetails = () => {
   useScrollRestoration();
-  const { nftId } = useParams();
+  const { nftId, authorId: routeAuthorId } = useParams();
   const { item, loading, error } = useExploreItem(nftId);
+  const [placeholderAuthorId, setPlaceholderAuthorId] = useState(FALLBACK_AUTHOR_ID);
 
-  const hasDynamicItem = Boolean(nftId);
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadFallbackAuthorId = async () => {
+      try {
+        const response = await fetch(TOP_SELLERS_URL);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch top sellers: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const resolvedAuthorId = Array.isArray(data)
+          ? data[0]?.authorId ?? data[0]?.id
+          : data?.authorId ?? data?.id;
+
+        if (isMounted && resolvedAuthorId != null) {
+          setPlaceholderAuthorId(String(resolvedAuthorId));
+        }
+      } catch (fetchError) {
+        // Keep rendering with local fallback id if remote data is unavailable.
+        console.error(fetchError);
+      }
+    };
+
+    loadFallbackAuthorId();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const authorId = routeAuthorId || placeholderAuthorId;
+  const hasDynamicItem = Boolean(nftId && authorId);
   const ownerName =
     item && typeof item.authorName === "string" && item.authorName.trim()
       ? item.authorName.trim()
       : "Creator";
   const ownerAuthorId =
-    item?.authorId != null ? String(item.authorId) : PLACEHOLDER_AUTHOR_ID;
+    item?.authorId != null
+      ? String(item.authorId)
+      : authorId;
   const ownerImage = item?.authorImage || AuthorImage;
   const previewImage = item?.nftImage || nftImage;
   const title = item?.title || "Rainbow Style #194";

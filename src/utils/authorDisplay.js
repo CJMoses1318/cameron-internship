@@ -1,3 +1,30 @@
+const ETH_ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/;
+
+const AUTHOR_WALLET_KEYS = [
+  "authorWallet",
+  "wallet",
+  "walletAddress",
+  "creatorWallet",
+  "ownerWallet",
+];
+
+/** @param {unknown} value */
+export function normalizeEthereumAddress(value) {
+  if (typeof value !== "string") return "";
+  const s = value.trim();
+  return ETH_ADDRESS_RE.test(s) ? s : "";
+}
+
+/** @param {object} row */
+export function pickAuthorWalletFromApiRow(row) {
+  if (!row || typeof row !== "object") return "";
+  for (const key of AUTHOR_WALLET_KEYS) {
+    const normalized = normalizeEthereumAddress(row[key]);
+    if (normalized) return normalized;
+  }
+  return "";
+}
+
 /** @param {string} [name] */
 export function formatAuthorHandle(name) {
   if (!name || typeof name !== "string") {
@@ -15,7 +42,7 @@ export function formatAuthorHandle(name) {
  * When an author is not in the top sellers list but has NFTs from explore,
  * build a minimal profile for display (explore items may omit authorName).
  * @param {string|number} authorId
- * @param {Array<{ authorName?: string, authorImage?: string, price?: number }>} items
+ * @param {Array<{ authorName?: string, authorImage?: string, price?: number, authorWallet?: string }>} items
  */
 export function buildAuthorProfileFromNfts(authorId, items) {
   if (!items?.length) return null;
@@ -31,11 +58,20 @@ export function buildAuthorProfileFromNfts(authorId, items) {
       : 0;
   const rawName =
     typeof first.authorName === "string" ? first.authorName.trim() : "";
+  let authorWallet = "";
+  for (const item of items) {
+    const w = pickAuthorWalletFromApiRow(item);
+    if (w) {
+      authorWallet = w;
+      break;
+    }
+  }
   return {
     authorId: Number(authorId),
     authorName: rawName || "Creator",
     authorImage: first.authorImage || "",
     price: avgPrice,
+    authorWallet,
   };
 }
 

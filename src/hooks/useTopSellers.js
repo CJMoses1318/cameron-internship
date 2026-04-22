@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { normalizeImageSource } from "../utils/imageFallback";
+import { pickAuthorWalletFromApiRow } from "../utils/authorDisplay";
 
 export const TOP_SELLERS_URL =
   "https://us-central1-nft-cloud-functions.cloudfunctions.net/topSellers";
@@ -14,6 +15,7 @@ function normalizeSeller(row) {
         : "Creator",
     authorImage: normalizeImageSource(row?.authorImage),
     price: Number.isFinite(Number(row?.price)) ? Number(row.price) : 0,
+    authorWallet: pickAuthorWalletFromApiRow(row || {}),
   };
 }
 

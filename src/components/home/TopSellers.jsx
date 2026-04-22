@@ -1,11 +1,23 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTopSellers } from "../../hooks/useTopSellers";
 import AuthorImage from "../../images/author_thumbnail.jpg";
 import ImageWithFallback from "../UI/ImageWithFallback";
+import Skeleton from "../UI/Skeleton";
 
 const TopSellers = () => {
   const { sellers, loading, error } = useTopSellers();
+  const [showSkeleton, setShowSkeleton] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowSkeleton(false);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  const shouldShowSkeleton = showSkeleton || loading;
 
   return (
     <section id="section-popular" className="pb-5">
@@ -19,22 +31,31 @@ const TopSellers = () => {
           </div>
           <div className="col-md-12">
             <ol className="author_list">
-              {loading && (
-                <li className="w-100 text-center" style={{ border: "none" }}>
-                  Loading…
-                </li>
-              )}
-              {error && !loading && (
+              {shouldShowSkeleton &&
+                Array.from({ length: 5 }).map((_, index) => (
+                  <li key={`top-seller-skeleton-${index}`}>
+                    <div className="author_list_pp">
+                      <Skeleton width="50px" height="50px" borderRadius="50%" />
+                    </div>
+                    <div className="author_list_info">
+                      <Skeleton width="120px" height="16px" borderRadius="4px" />
+                      <div className="mt-1">
+                        <Skeleton width="70px" height="14px" borderRadius="4px" />
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              {error && !shouldShowSkeleton && (
                 <li className="w-100 text-center" style={{ border: "none" }}>
                   {error}
                 </li>
               )}
-              {!loading && !error && sellers.length === 0 && (
+              {!shouldShowSkeleton && !error && sellers.length === 0 && (
                 <li className="w-100 text-center" style={{ border: "none" }}>
                   No sellers available.
                 </li>
               )}
-              {!loading &&
+              {!shouldShowSkeleton &&
                 !error &&
                 sellers.map((seller) => (
                   <li key={seller.authorId}>

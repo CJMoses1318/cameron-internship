@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import AuthorBanner from "../images/author_banner.jpg";
 import AuthorImage from "../images/author_thumbnail.jpg";
 import AuthorItems from "../components/author/AuthorItems";
@@ -7,18 +7,27 @@ import { useScrollRestoration } from "../hooks/useScrollRestoration";
 import { useTopSellers } from "../hooks/useTopSellers";
 import { useAuthorNfts } from "../hooks/useAuthorNfts";
 import ImageWithFallback from "../components/UI/ImageWithFallback";
+import Skeleton from "../components/UI/Skeleton";
 import {
   buildAuthorProfileFromNfts,
   formatAuthorHandle,
   formatPseudoWallet,
+  normalizeEthereumAddress,
 } from "../utils/authorDisplay";
 
 const Author = () => {
   useScrollRestoration();
   const { authorId } = useParams();
+  const [showRouteSkeleton, setShowRouteSkeleton] = useState(authorId != null);
   const { sellers, loading, error } = useTopSellers();
-  const { items: nftItems, loading: nftsLoading, error: nftsError } =
+  const {
+    items: nftItems,
+    allItems: allExploreItems,
+    loading: nftsLoading,
+    error: nftsError,
+  } =
     useAuthorNfts(authorId);
+  const targetItemCount = 8;
 
   const seller =
     authorId != null
@@ -41,8 +50,26 @@ const Author = () => {
     !error &&
     (loading || (!seller && !loading && nftsLoading));
 
+  useEffect(() => {
+    if (authorId == null) {
+      setShowRouteSkeleton(false);
+      return;
+    }
+
+    setShowRouteSkeleton(true);
+    const timer = setTimeout(() => {
+      setShowRouteSkeleton(false);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [authorId]);
+
+  const shouldShowProfileSkeleton =
+    authorId != null && (showRouteSkeleton || showLoadingProfile);
+
   const showNotFound =
     authorId != null &&
+    !showRouteSkeleton &&
     !loading &&
     !error &&
     !nftsLoading &&
@@ -52,6 +79,7 @@ const Author = () => {
 
   const showExploreError =
     authorId != null &&
+    !showRouteSkeleton &&
     !loading &&
     !error &&
     !seller &&
@@ -61,6 +89,7 @@ const Author = () => {
   const showProfile =
     authorId != null &&
     Boolean(resolvedAuthor) &&
+    !showRouteSkeleton &&
     !loading &&
     (seller ? true : !nftsLoading);
 
@@ -69,8 +98,13 @@ const Author = () => {
   const profileUsername = resolvedAuthor
     ? formatAuthorHandle(resolvedAuthor.authorName)
     : "";
+  const apiWallet = normalizeEthereumAddress(
+    resolvedAuthor?.authorWallet ?? ""
+  );
   const profileWallet =
-    authorId != null ? formatPseudoWallet(authorId) : "";
+    authorId != null
+      ? apiWallet || formatPseudoWallet(authorId)
+      : "";
   const likesSum = nftItems.reduce((s, i) => s + (Number(i.likes) || 0), 0);
   const profileFollowerText = nftsLoading
     ? "…"
@@ -82,6 +116,44 @@ const Author = () => {
     if (!profileWallet) return;
     void navigator.clipboard?.writeText(profileWallet);
   };
+
+  const displayedNftItems = useMemo(() => {
+    if (authorId == null) return [];
+
+    const ownItems = nftItems.map((item) => ({
+      ...item,
+      isRecommended: false,
+    }));
+    if (ownItems.length >= targetItemCount) {
+      return ownItems.slice(0, targetItemCount);
+    }
+
+    const ownNftIds = new Set(ownItems.map((item) => String(item.nftId || item.id)));
+    const authorSeed = String(authorId)
+      .split("")
+      .reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+
+    const fallbackItems = allExploreItems
+      .filter(
+        (item) =>
+          String(item.authorId) !== String(authorId) &&
+          !ownNftIds.has(String(item.nftId || item.id))
+      )
+      .slice()
+      .sort((a, b) => {
+        const aKey = ((Number(a.nftId) || 0) * 37 + authorSeed) % 9973;
+        const bKey = ((Number(b.nftId) || 0) * 37 + authorSeed) % 9973;
+        if (aKey !== bKey) return aKey - bKey;
+        return (Number(a.nftId) || 0) - (Number(b.nftId) || 0);
+      })
+      .slice(0, Math.max(0, targetItemCount - ownItems.length))
+      .map((item) => ({
+        ...item,
+        isRecommended: true,
+      }));
+
+    return [...ownItems, ...fallbackItems].slice(0, targetItemCount);
+  }, [authorId, nftItems, allExploreItems]);
 
   return (
     <div id="wrapper">
@@ -109,7 +181,7 @@ const Author = () => {
                   </div>
                 )}
 
-                {authorId != null && error && !loading && (
+                {authorId != null && !showRouteSkeleton && error && !loading && (
                   <div className="py-5 text-center">
                     <p>{error}</p>
                     <Link to="/" className="btn-main">
@@ -127,11 +199,30 @@ const Author = () => {
                   </div>
                 )}
 
-                {showLoadingProfile && (
+                {shouldShowProfileSkeleton && (
                   <div className="d_profile de-flex">
                     <div className="de-flex-col">
                       <div className="profile_avatar">
-                        <p className="mb-0">Loading…</p>
+                        <Skeleton width="150px" height="150px" borderRadius="50%" />
+                        <div className="profile_name mt-3">
+                          <Skeleton width="180px" height="20px" borderRadius="4px" />
+                          <div className="mt-2">
+                            <Skeleton width="140px" height="16px" borderRadius="4px" />
+                          </div>
+                          <div className="mt-2">
+                            <Skeleton width="120px" height="16px" borderRadius="4px" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="profile_follow de-flex">
+                      <div className="de-flex-col">
+                        <div className="profile_follower">
+                          <Skeleton width="120px" height="16px" borderRadius="4px" />
+                        </div>
+                        <div className="mt-2">
+                          <Skeleton width="90px" height="38px" borderRadius="4px" />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -199,9 +290,11 @@ const Author = () => {
                 <div className="col-md-12">
                   <div className="de_tab tab_simple">
                     <AuthorItems
-                      items={nftItems}
+                      items={displayedNftItems}
                       loading={nftsLoading}
                       error={nftsError}
+                      profileAuthorImage={resolvedAuthor?.authorImage || ""}
+                      profileAuthorName={resolvedAuthor?.authorName || "Creator"}
                     />
                   </div>
                 </div>

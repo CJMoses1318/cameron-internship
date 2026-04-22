@@ -4,7 +4,13 @@ import AuthorImage from "../../images/author_thumbnail.jpg";
 import nftImage from "../../images/nftImage.jpg";
 import ImageWithFallback from "../UI/ImageWithFallback";
 
-const AuthorItems = ({ items = [], loading = false, error = null }) => {
+const AuthorItems = ({
+  items = [],
+  loading = false,
+  error = null,
+  profileAuthorImage = "",
+  profileAuthorName = "Creator",
+}) => {
   return (
     <div className="de_tab_content">
       <div className="tab-1">
@@ -20,19 +26,19 @@ const AuthorItems = ({ items = [], loading = false, error = null }) => {
           )}
           {!loading &&
             !error &&
-            items.map((item) => (
+            items.map((item, index) => (
               <div
                 className="col-lg-3 col-md-6 col-sm-6 col-xs-12"
-                key={item.nftId}
+                key={`${item.authorId}-${item.nftId}-${index}`}
               >
                 <div className="nft__item">
                   <div className="author_list_pp">
                     <Link to={`/author/${item.authorId}`}>
                       <ImageWithFallback
                         className="lazy"
-                        src={item.authorImage}
+                        src={profileAuthorImage || item.authorImage}
                         fallbackSrc={AuthorImage}
-                        alt={item.authorName}
+                        alt={profileAuthorName}
                       />
                       <i className="fa fa-check"></i>
                     </Link>
@@ -76,6 +82,11 @@ const AuthorItems = ({ items = [], loading = false, error = null }) => {
                     <Link to={`/item-details/${item.nftId}`}>
                       <h4>{item.title}</h4>
                     </Link>
+                    {item.isRecommended && (
+                      <div>
+                        <small className="text-muted">Recommended</small>
+                      </div>
+                    )}
                     <div className="nft__item_price">{item.price} ETH</div>
                     <div className="nft__item_like">
                       <i className="fa fa-heart"></i>

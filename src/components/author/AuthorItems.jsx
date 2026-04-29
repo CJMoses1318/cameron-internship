@@ -12,7 +12,7 @@ const AuthorItems = () => {
             <div className="col-lg-3 col-md-6 col-sm-6 col-xs-12" key={index}>
               <div className="nft__item">
                 <div className="author_list_pp">
-                  <Link to="">
+                  <Link to="/author">
                     <img className="lazy" src={AuthorImage} alt="" />
                     <i className="fa fa-check"></i>
                   </Link>
@@ -23,13 +23,13 @@ const AuthorItems = () => {
                       <button>Buy Now</button>
                       <div className="nft__item_share">
                         <h4>Share</h4>
-                        <a href="" target="_blank" rel="noreferrer">
+                        <a href="https://www.facebook.com" target="_blank" rel="noreferrer">
                           <i className="fa fa-facebook fa-lg"></i>
                         </a>
-                        <a href="" target="_blank" rel="noreferrer">
+                        <a href="https://x.com" target="_blank" rel="noreferrer">
                           <i className="fa fa-twitter fa-lg"></i>
                         </a>
-                        <a href="">
+                        <a href="mailto:">
                           <i className="fa fa-envelope fa-lg"></i>
                         </a>
                       </div>

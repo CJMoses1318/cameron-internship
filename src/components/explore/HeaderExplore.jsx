@@ -11,6 +11,7 @@ const HeaderExplore = () => {
           method="post"
           name="form_quick_search"
         >
+          {/* Any comment */}
           <div className="col text-center">
             <input
               className="form-control"

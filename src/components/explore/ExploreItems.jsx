@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import AOS from "aos";
 import useExploreNfts from "../../hooks/useExploreNfts";
 import NftItemCard from "../common/NftItemCard";
 import NftItemCardSkeleton from "../common/NftItemCardSkeleton";
@@ -32,14 +33,32 @@ const ExploreItems = ({ notice = "" }) => {
     );
   };
 
+  useEffect(() => {
+    const id = window.requestAnimationFrame(() => {
+      AOS.refreshHard();
+    });
+    return () => window.cancelAnimationFrame(id);
+  }, [loading, error, visibleCount, visibleItems.length, filter]);
+
   return (
     <>
       {notice && (
-        <div className="col-md-12 text-center mb-3">
+        <div
+          className="col-md-12 text-center mb-3"
+          data-aos="fade-up"
+          data-aos-duration="1100"
+          data-aos-easing="ease-out"
+        >
           <p>{notice}</p>
         </div>
       )}
-      <div>
+      <div
+        className="mb-4"
+        data-aos="fade-up"
+        data-aos-duration="1100"
+        data-aos-easing="ease-out"
+        data-aos-delay="80"
+      >
         <select
           id="filter-items"
           value={filter}
@@ -56,17 +75,32 @@ const ExploreItems = ({ notice = "" }) => {
           <NftItemCardSkeleton key={`loading-${index}`} />
         ))}
       {error && (
-        <div className="col-md-12 text-center">
+        <div
+          className="col-md-12 text-center"
+          data-aos="fade-up"
+          data-aos-duration="1100"
+          data-aos-easing="ease-out"
+        >
           <p>{error}</p>
         </div>
       )}
       {!loading &&
         !error &&
         visibleItems.map((item, index) => (
-          <NftItemCard key={item.id ?? item.nftId ?? index} item={item} />
-      ))}
+          <NftItemCard
+            key={item.id ?? item.nftId ?? index}
+            item={item}
+            enableAos
+            aosDelay={Math.min(index * 100, 700)}
+          />
+        ))}
       {showLoadMore && (
-        <div className="col-md-12 text-center">
+        <div
+          className="col-md-12 text-center"
+          data-aos="fade-up"
+          data-aos-duration="1100"
+          data-aos-easing="ease-out"
+        >
           <button
             type="button"
             id="loadmore"

@@ -84,7 +84,13 @@ const TopSellers = () => {
   }, [topAuthors]);
 
   return (
-    <section id="section-popular" className="pb-5">
+    <section
+      id="section-popular"
+      className="pb-5"
+      data-aos="fade-up"
+      data-aos-easing="ease-out"
+      data-aos-duration="800"
+    >
       <div className="container">
         <div className="row">
           <div className="col-lg-12">

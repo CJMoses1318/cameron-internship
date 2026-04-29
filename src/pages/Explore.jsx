@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import AOS from "aos";
 import { useLocation, useNavigate } from "react-router-dom";
 import SubHeader from "../images/subheader.jpg";
 import ExploreItems from "../components/explore/ExploreItems";
@@ -10,6 +11,13 @@ const Explore = () => {
 
   useEffect(() => {
     window.scrollTo(0, 0);
+  }, []);
+
+  useEffect(() => {
+    const id = window.requestAnimationFrame(() => {
+      AOS.refreshHard();
+    });
+    return () => window.cancelAnimationFrame(id);
   }, []);
 
   useEffect(() => {
@@ -28,6 +36,9 @@ const Explore = () => {
           id="subheader"
           className="text-light"
           style={{ background: `url("${SubHeader}") top` }}
+          data-aos="fade-up"
+          data-aos-duration="1200"
+          data-aos-easing="ease-out"
         >
           <div className="center-y relative text-center">
             <div className="container">

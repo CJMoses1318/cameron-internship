@@ -12,7 +12,13 @@ const HotCollections = () => {
   const items = uniqueItems.slice(0, HOT_COLLECTIONS_COUNT);
 
   return (
-    <section id="section-collections" className="no-bottom">
+    <section
+      id="section-collections"
+      className="no-bottom"
+      data-aos="fade-up"
+      data-aos-easing="ease-out"
+      data-aos-duration="800"
+    >
       <div className="container">
         <div className="row">
           <div className="col-lg-12">

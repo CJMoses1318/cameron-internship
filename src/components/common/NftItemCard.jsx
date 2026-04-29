@@ -29,7 +29,13 @@ const formatCountdown = (expiryDate) => {
   return `${hours}h ${minutes}m ${seconds}s`;
 };
 
-const NftItemCard = ({ item, variant = "grid", authorImage }) => {
+const NftItemCard = ({
+  item,
+  variant = "grid",
+  authorImage,
+  enableAos = false,
+  aosDelay = 0,
+}) => {
   if (!item) {
     return null;
   }
@@ -54,8 +60,21 @@ const NftItemCard = ({ item, variant = "grid", authorImage }) => {
       ? "d-item col-lg-3 col-md-6 col-sm-6 col-xs-12"
       : "d-item col-lg-3 col-md-6 col-sm-6 col-xs-12";
 
+  const aosProps = enableAos
+    ? {
+        "data-aos": "fade-up",
+        "data-aos-duration": "1000",
+        "data-aos-easing": "ease-out",
+        ...(aosDelay > 0 ? { "data-aos-delay": String(aosDelay) } : {}),
+      }
+    : {};
+
   return (
-    <div className={wrapperClass} style={{ display: "block", backgroundSize: "cover" }}>
+    <div
+      className={wrapperClass}
+      style={{ display: "block", backgroundSize: "cover" }}
+      {...aosProps}
+    >
       <div className="nft__item">
         <div className="author_list_pp">
           <Link to={authorPath}>

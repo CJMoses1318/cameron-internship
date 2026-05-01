@@ -3,7 +3,7 @@ import EthImage from "../images/ethereum.svg";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import AuthorImage from "../images/author_thumbnail.jpg";
 import nftImage from "../images/nftImage.jpg";
-import ItemDetailsSkeleton from "../components/common/ItemDetailsSkeleton";
+import ItemDetailsSkeleton from "../components/item/ItemDetailsSkeleton";
 import useExploreNfts from "../hooks/useExploreNfts";
 import { buildAuthorsUrl } from "../constants/api";
 
@@ -20,6 +20,10 @@ const ItemDetails = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { uniqueItems, loading, error } = useExploreNfts();
+  const [authorMetaById, setAuthorMetaById] = useState({});
+  const [creatorName, setCreatorName] = useState(null);
+  const [ownerName, setOwnerName] = useState(null);
+
   const item = useMemo(() => {
     const routeStateItem = location.state?.selectedItem;
     if (routeStateItem && typeof routeStateItem === "object") {
@@ -36,13 +40,10 @@ const ItemDetails = () => {
         String(row.nftId) === String(nftId) || String(row.id) === String(nftId)
     );
   }, [uniqueItems, nftId, location.state]);
-  const [authorMetaById, setAuthorMetaById] = useState({});
-  const [creatorName, setCreatorName] = useState(null);
-  const [ownerName, setOwnerName] = useState(null);
 
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, []);
+  }, [nftId]);
 
   useEffect(() => {
     if (!loading && !error && nftId && !item) {
@@ -107,7 +108,7 @@ const ItemDetails = () => {
 
     const loadAuthorNames = async () => {
       const missingIds = requiredAuthorIds.filter((id) => !authorMetaById[id]);
-      let resolvedNow = {};
+      const resolvedNow = {};
 
       if (missingIds.length > 0) {
         const pairs = await Promise.all(
@@ -189,8 +190,11 @@ const ItemDetails = () => {
           <section aria-label="section" className="mt90 sm-mt-0">
             <div className="container">
               <div className="row">
-                <div className="col-md-12 text-center">
+                <div className="col-md-12 text-center py-5">
                   <p>{error}</p>
+                  <Link to="/explore" className="btn-main">
+                    Back to Explore
+                  </Link>
                 </div>
               </div>
             </div>
@@ -208,12 +212,15 @@ const ItemDetails = () => {
   const preview = item.nftImage || nftImage;
   const creatorImage =
     authorMetaById[creatorAuthorId]?.image || item.authorImage || AuthorImage;
-  const ownerImage =
-    authorMetaById[ownerAuthorId]?.image || AuthorImage;
+  const ownerImage = authorMetaById[ownerAuthorId]?.image || AuthorImage;
   const creatorPath = creatorAuthorId ? `/author/${creatorAuthorId}` : "/author";
   const ownerPath = ownerAuthorId ? `/author/${ownerAuthorId}` : creatorPath;
-  const fallbackCreatorLabel = `Creator #${String(creatorAuthorId).slice(-6) || "—"}`;
-  const fallbackOwnerLabel = `Owner #${String(ownerAuthorId || creatorAuthorId).slice(-6) || "—"}`;
+  const fallbackCreatorLabel = `Creator #${
+    String(creatorAuthorId).slice(-6) || "—"
+  }`;
+  const fallbackOwnerLabel = `Owner #${
+    String(ownerAuthorId || creatorAuthorId).slice(-6) || "—"
+  }`;
   const creatorDisplayName = creatorName?.trim() || fallbackCreatorLabel;
   const ownerDisplayName = ownerName?.trim() || fallbackOwnerLabel;
   const priceText = formatEthAmount(item.price);
@@ -274,9 +281,7 @@ const ItemDetails = () => {
                           </Link>
                         </div>
                         <div className="author_list_info">
-                          <Link to={ownerPath}>
-                            {ownerDisplayName}
-                          </Link>
+                          <Link to={ownerPath}>{ownerDisplayName}</Link>
                         </div>
                       </div>
                     </div>
@@ -298,9 +303,7 @@ const ItemDetails = () => {
                           </Link>
                         </div>
                         <div className="author_list_info">
-                          <Link to={creatorPath}>
-                            {creatorDisplayName}
-                          </Link>
+                          <Link to={creatorPath}>{creatorDisplayName}</Link>
                         </div>
                       </div>
                     </div>

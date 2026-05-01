@@ -1,41 +1,33 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import NftItemCard from "../common/NftItemCard";
 import NftItemCardSkeleton from "../common/NftItemCardSkeleton";
 import useExploreNfts from "../../hooks/useExploreNfts";
 
-const INITIAL_VISIBLE_COUNT = 8;
-const LOAD_MORE_INCREMENT = 4;
-
+const DEFAULT_VISIBLE_COUNT = 8;
+const LOAD_MORE_STEP = 4;
 const exploreColumnClass =
   "d-item col-lg-3 col-md-6 col-sm-6 col-xs-12";
-const exploreColumnStyle = { display: "block", backgroundSize: "cover" };
 
 const ExploreItems = ({ notice = "" }) => {
   const [filter, setFilter] = useState("");
+  const [visibleCount, setVisibleCount] = useState(DEFAULT_VISIBLE_COUNT);
   const { uniqueItems, loading, error } = useExploreNfts({ filter });
-  const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_COUNT);
-
-  useEffect(() => {
-    setVisibleCount(
-      uniqueItems.length > 0
-        ? Math.min(INITIAL_VISIBLE_COUNT, uniqueItems.length)
-        : INITIAL_VISIBLE_COUNT
-    );
-  }, [filter, uniqueItems]);
 
   const visibleItems = useMemo(
     () => uniqueItems.slice(0, visibleCount),
     [uniqueItems, visibleCount]
   );
 
-  const handleLoadMore = () => {
-    setVisibleCount((current) =>
-      Math.min(current + LOAD_MORE_INCREMENT, uniqueItems.length)
-    );
+  const canLoadMore = visibleItems.length < uniqueItems.length;
+
+  const handleFilterChange = (event) => {
+    setFilter(event.target.value);
+    setVisibleCount(DEFAULT_VISIBLE_COUNT);
   };
 
-  const showLoadMore =
-    !loading && !error && uniqueItems.length > visibleCount;
+  const handleLoadMore = () => {
+    setVisibleCount((count) => count + LOAD_MORE_STEP);
+  };
 
   return (
     <>
@@ -48,7 +40,7 @@ const ExploreItems = ({ notice = "" }) => {
         <select
           id="filter-items"
           value={filter}
-          onChange={(event) => setFilter(event.target.value)}
+          onChange={handleFilterChange}
         >
           <option value="">Default</option>
           <option value="price_low_to_high">Price, Low to High</option>
@@ -57,15 +49,15 @@ const ExploreItems = ({ notice = "" }) => {
         </select>
       </div>
       {loading &&
-        Array.from({ length: INITIAL_VISIBLE_COUNT }, (_, index) => (
+        Array.from({ length: DEFAULT_VISIBLE_COUNT }, (_, index) => (
           <NftItemCardSkeleton
             key={`explore-skeleton-${index}`}
             columnClassName={exploreColumnClass}
-            style={exploreColumnStyle}
+            style={{ display: "block", backgroundSize: "cover" }}
           />
         ))}
-      {error && (
-        <div className="col-md-12 text-center">
+      {!loading && error && (
+        <div className="col-md-12 text-center py-4">
           <p>{error}</p>
         </div>
       )}
@@ -76,10 +68,10 @@ const ExploreItems = ({ notice = "" }) => {
             key={item.id ?? item.nftId}
             item={item}
             columnClassName={exploreColumnClass}
-            columnStyle={exploreColumnStyle}
+            columnStyle={{ display: "block", backgroundSize: "cover" }}
           />
         ))}
-      {showLoadMore && (
+      {!loading && !error && canLoadMore && (
         <div className="col-md-12 text-center">
           <button
             type="button"
@@ -89,6 +81,11 @@ const ExploreItems = ({ notice = "" }) => {
           >
             Load more
           </button>
+        </div>
+      )}
+      {!loading && !error && uniqueItems.length === 0 && (
+        <div className="col-md-12 text-center py-4">
+          <p>No items found.</p>
         </div>
       )}
     </>

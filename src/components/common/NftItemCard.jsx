@@ -96,25 +96,15 @@ const NftItemCard = ({
                 </button>
                 <div className="nft__item_share" onClick={stopCardNavigation}>
                   <h4>Share</h4>
-                  <a
-                    href="#share"
-                    onClick={stopCardNavigation}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
+                  <button type="button" onClick={stopCardNavigation}>
                     <i className="fa fa-facebook fa-lg"></i>
-                  </a>
-                  <a
-                    href="#share"
-                    onClick={stopCardNavigation}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
+                  </button>
+                  <button type="button" onClick={stopCardNavigation}>
                     <i className="fa fa-twitter fa-lg"></i>
-                  </a>
-                  <a href="#share" onClick={stopCardNavigation}>
+                  </button>
+                  <button type="button" onClick={stopCardNavigation}>
                     <i className="fa fa-envelope fa-lg"></i>
-                  </a>
+                  </button>
                 </div>
               </div>
             </div>

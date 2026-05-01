@@ -6,10 +6,10 @@ import LandingIntro from "../components/home/LandingIntro";
 import NewItems from "../components/home/NewItems";
 import TopSellers from "../components/home/TopSellers";
 import { ExploreNftsProvider } from "../context/ExploreNftsContext";
-import useScrollToTopOnNavigate from "../hooks/useScrollToTopOnNavigate";
+import { useScrollRestoration } from "../hooks/useScrollRestoration";
 
 const Home = () => {
-  useScrollToTopOnNavigate();
+  useScrollRestoration();
 
   return (
     <div id="wrapper">

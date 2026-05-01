@@ -131,7 +131,6 @@ const Author = () => {
       event.currentTarget.src = AuthorImage;
     }
   };
-
   return (
     <div id="wrapper">
       <div className="no-bottom no-top" id="content">

@@ -64,7 +64,6 @@ const ExploreItems = ({ notice = "" }) => {
 
   const visibleItems = items.slice(0, visibleCount);
   const canLoadMore = !loading && !error && visibleCount < items.length;
-
   return (
     <>
       {notice && (

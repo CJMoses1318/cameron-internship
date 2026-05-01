@@ -2,13 +2,13 @@ import React, { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import SubHeader from "../images/subheader.jpg";
 import ExploreItems from "../components/explore/ExploreItems";
-import useScrollToTopOnNavigate from "../hooks/useScrollToTopOnNavigate";
+import { useScrollRestoration } from "../hooks/useScrollRestoration";
 
 const Explore = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const notice = location.state?.notice || "";
-  useScrollToTopOnNavigate();
+  useScrollRestoration();
 
   useEffect(() => {
     if (!notice) {
@@ -16,7 +16,6 @@ const Explore = () => {
     }
     navigate(location.pathname, { replace: true, state: {} });
   }, [notice, navigate, location.pathname]);
-
   return (
     <div id="wrapper">
       <div className="no-bottom no-top" id="content">

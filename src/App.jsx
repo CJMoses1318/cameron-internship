@@ -26,7 +26,7 @@ function App() {
             <Navigate to={`/item-details/${FALLBACK_NFT_ID}`} replace />
           }
         />
-        <Route path="/item-details/:itemId" element={<ItemDetails />} />
+        <Route path="/item-details/:nftId" element={<ItemDetails />} />
       </Routes>
       <Footer />
     </Router>

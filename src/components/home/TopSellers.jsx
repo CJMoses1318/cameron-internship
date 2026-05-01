@@ -1,93 +1,23 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import TopSellerRowSkeleton from "../common/TopSellerRowSkeleton";
-import { useExploreNftsContext } from "../../context/ExploreNftsContext";
-import { buildAuthorsUrl } from "../../constants/api";
-
-const TOP_SELLERS_COUNT = 12;
+import { useTopSellers } from "../../hooks/useTopSellers";
+import AuthorImage from "../../images/author_thumbnail.jpg";
+import ImageWithFallback from "../UI/ImageWithFallback";
+import Skeleton from "../UI/Skeleton";
 
 const TopSellers = () => {
-  const { uniqueItems, loading, error } = useExploreNftsContext();
-  const [authorNamesById, setAuthorNamesById] = useState({});
-
-  const topAuthors = useMemo(() => {
-    const byAuthor = new Map();
-    for (const item of uniqueItems) {
-      const authorId = item.authorId;
-      if (authorId === undefined || authorId === null) {
-        continue;
-      }
-      if (!byAuthor.has(authorId)) {
-        byAuthor.set(authorId, {
-          authorId,
-          authorImage: item.authorImage,
-          totalEth: 0,
-        });
-      }
-      const row = byAuthor.get(authorId);
-      row.totalEth += Number(item.price) || 0;
-    }
-    return Array.from(byAuthor.values())
-      .sort((a, b) => b.totalEth - a.totalEth)
-      .slice(0, TOP_SELLERS_COUNT);
-  }, [uniqueItems]);
-
-  const topAuthorIdsKey = useMemo(
-    () =>
-      topAuthors
-        .map((author) => author.authorId)
-        .filter((id) => id !== undefined && id !== null)
-        .join(","),
-    [topAuthors]
-  );
+  const { sellers, loading, error } = useTopSellers();
+  const [showSkeleton, setShowSkeleton] = useState(true);
 
   useEffect(() => {
-    if (loading || error || topAuthors.length === 0) {
-      setAuthorNamesById({});
-      return undefined;
-    }
+    const timer = setTimeout(() => {
+      setShowSkeleton(false);
+    }, 1000);
 
-    let cancelled = false;
+    return () => clearTimeout(timer);
+  }, []);
 
-    const loadAuthorNames = async () => {
-      const pairs = await Promise.all(
-        topAuthors.map(async (author) => {
-          try {
-            const response = await fetch(buildAuthorsUrl(author.authorId));
-            if (!response.ok) {
-              return [author.authorId, null];
-            }
-            const data = await response.json();
-            const name =
-              typeof data.authorName === "string" && data.authorName.trim()
-                ? data.authorName.trim()
-                : null;
-            return [author.authorId, name];
-          } catch {
-            return [author.authorId, null];
-          }
-        })
-      );
-
-      if (cancelled) {
-        return;
-      }
-
-      const next = {};
-      pairs.forEach(([authorId, name]) => {
-        if (name) {
-          next[authorId] = name;
-        }
-      });
-      setAuthorNamesById(next);
-    };
-
-    loadAuthorNames();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [loading, error, topAuthorIdsKey, topAuthors]);
+  const shouldShowSkeleton = showSkeleton || loading;
 
   return (
     <section id="section-popular" className="pb-5">
@@ -100,47 +30,55 @@ const TopSellers = () => {
             </div>
           </div>
           <div className="col-md-12">
-            {loading && (
-              <ol className="author_list">
-                {Array.from({ length: TOP_SELLERS_COUNT }, (_, index) => (
-                  <TopSellerRowSkeleton key={`top-seller-skeleton-${index}`} />
-                ))}
-              </ol>
-            )}
-            {error && (
-              <div className="text-center">
-                <p>{error}</p>
-              </div>
-            )}
-            {!loading && !error && (
-              <ol className="author_list">
-                {topAuthors.map((author) => {
-                  const displayName =
-                    authorNamesById[author.authorId] ??
-                    `Creator #${String(author.authorId).slice(-6)}`;
-                  return (
-                  <li key={author.authorId}>
+            <ol className="author_list">
+              {shouldShowSkeleton &&
+                Array.from({ length: 5 }).map((_, index) => (
+                  <li key={`top-seller-skeleton-${index}`}>
                     <div className="author_list_pp">
-                      <Link to={`/author/${author.authorId}`}>
-                        <img
+                      <Skeleton width="50px" height="50px" borderRadius="50%" />
+                    </div>
+                    <div className="author_list_info">
+                      <Skeleton width="120px" height="16px" borderRadius="4px" />
+                      <div className="mt-1">
+                        <Skeleton width="70px" height="14px" borderRadius="4px" />
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              {error && !shouldShowSkeleton && (
+                <li className="w-100 text-center" style={{ border: "none" }}>
+                  {error}
+                </li>
+              )}
+              {!shouldShowSkeleton && !error && sellers.length === 0 && (
+                <li className="w-100 text-center" style={{ border: "none" }}>
+                  No sellers available.
+                </li>
+              )}
+              {!shouldShowSkeleton &&
+                !error &&
+                sellers.map((seller) => (
+                  <li key={seller.authorId}>
+                    <div className="author_list_pp">
+                      <Link to={`/author/${seller.authorId}`}>
+                        <ImageWithFallback
                           className="lazy pp-author"
-                          src={author.authorImage}
-                          alt={displayName}
+                          src={seller.authorImage}
+                          fallbackSrc={AuthorImage}
+                          alt={seller.authorName || "Creator"}
                         />
                         <i className="fa fa-check"></i>
                       </Link>
                     </div>
                     <div className="author_list_info">
-                      <Link to={`/author/${author.authorId}`}>
-                        {displayName}
+                      <Link to={`/author/${seller.authorId}`}>
+                        {seller.authorName || "Creator"}
                       </Link>
-                      <span>{author.totalEth.toFixed(2)} ETH</span>
+                      <span>{Number(seller.price || 0)} ETH</span>
                     </div>
                   </li>
-                  );
-                })}
-              </ol>
-            )}
+                ))}
+            </ol>
           </div>
         </div>
       </div>

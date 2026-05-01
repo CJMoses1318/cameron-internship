@@ -21,7 +21,7 @@ const normalizeId = (value) =>
     : "";
 
 const ItemDetails = () => {
-  const { itemId } = useParams();
+  const { nftId } = useParams();
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const navigate = useNavigate();
@@ -32,8 +32,8 @@ const ItemDetails = () => {
 
   const targetId = useMemo(() => {
     const fromQuery = normalizeId(searchParams.get("nftId"));
-    return normalizeId(itemId) || fromQuery;
-  }, [itemId, searchParams]);
+    return normalizeId(nftId) || fromQuery;
+  }, [nftId, searchParams]);
 
   const item = useMemo(() => {
     const routeStateItem = location.state?.selectedItem;
@@ -334,7 +334,7 @@ const ItemDetails = () => {
                 </div>
               </div>
             </div>
-            </div>
+          </div>
           </section>
       </div>
     </div>

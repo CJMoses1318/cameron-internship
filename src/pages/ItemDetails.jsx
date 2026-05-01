@@ -322,6 +322,7 @@ const ItemDetails = () => {
                           <Link to={creatorPath}>{creatorDisplayName}</Link>
                         </div>
                       </div>
+                      <div></div>
                     </div>
                     <div className="spacer-40"></div>
                     <h6>Price</h6>
@@ -333,8 +334,8 @@ const ItemDetails = () => {
                 </div>
               </div>
             </div>
-          </div>
-        </section>
+            </div>
+          </section>
       </div>
     </div>
   );

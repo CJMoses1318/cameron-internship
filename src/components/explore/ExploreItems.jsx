@@ -1,33 +1,69 @@
-import React, { useMemo, useState } from "react";
-import NftItemCard from "../common/NftItemCard";
-import NftItemCardSkeleton from "../common/NftItemCardSkeleton";
-import useExploreNfts from "../../hooks/useExploreNfts";
+import React, { useEffect, useState } from "react";
+import NftCardSkeleton from "../common/NftCardSkeleton";
+import NftItemCard from "./NftItemCard";
+import {
+  getExploreListUrl,
+  SKELETON_MIN_MS,
+} from "../../constants/exploreApi";
+import { withMinDelay } from "../../utils/withMinDelay";
 
-const DEFAULT_VISIBLE_COUNT = 8;
-const LOAD_MORE_STEP = 4;
-const exploreColumnClass =
-  "d-item col-lg-3 col-md-6 col-sm-6 col-xs-12";
+const INITIAL_VISIBLE = 8;
+const LOAD_MORE_INCREMENT = 4;
 
 const ExploreItems = ({ notice = "" }) => {
   const [filter, setFilter] = useState("");
-  const [visibleCount, setVisibleCount] = useState(DEFAULT_VISIBLE_COUNT);
-  const { uniqueItems, loading, error } = useExploreNfts({ filter });
+  const [items, setItems] = useState([]);
+  const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const visibleItems = useMemo(
-    () => uniqueItems.slice(0, visibleCount),
-    [uniqueItems, visibleCount]
-  );
+  useEffect(() => {
+    let cancelled = false;
 
-  const canLoadMore = visibleItems.length < uniqueItems.length;
+    const load = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await withMinDelay(
+          SKELETON_MIN_MS,
+          (async () => {
+            const res = await fetch(getExploreListUrl(filter));
+            if (!res.ok) {
+              throw new Error(`Request failed (${res.status})`);
+            }
+            const json = await res.json();
+            if (!Array.isArray(json)) {
+              throw new Error("Invalid response shape");
+            }
+            return json;
+          })()
+        );
+        if (cancelled) return;
+        setItems(data);
+        setVisibleCount(Math.min(INITIAL_VISIBLE, data.length));
+      } catch (e) {
+        if (!cancelled) {
+          setError(e.message || "Failed to load explore items");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
 
-  const handleFilterChange = (event) => {
-    setFilter(event.target.value);
-    setVisibleCount(DEFAULT_VISIBLE_COUNT);
-  };
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [filter]);
 
   const handleLoadMore = () => {
-    setVisibleCount((count) => count + LOAD_MORE_STEP);
+    setVisibleCount((c) => Math.min(c + LOAD_MORE_INCREMENT, items.length));
   };
+
+  const visibleItems = items.slice(0, visibleCount);
+  const canLoadMore = !loading && !error && visibleCount < items.length;
 
   return (
     <>
@@ -40,7 +76,7 @@ const ExploreItems = ({ notice = "" }) => {
         <select
           id="filter-items"
           value={filter}
-          onChange={handleFilterChange}
+          onChange={(e) => setFilter(e.target.value)}
         >
           <option value="">Default</option>
           <option value="price_low_to_high">Price, Low to High</option>
@@ -49,29 +85,39 @@ const ExploreItems = ({ notice = "" }) => {
         </select>
       </div>
       {loading &&
-        Array.from({ length: DEFAULT_VISIBLE_COUNT }, (_, index) => (
-          <NftItemCardSkeleton
-            key={`explore-skeleton-${index}`}
-            columnClassName={exploreColumnClass}
+        Array.from({ length: INITIAL_VISIBLE }, (_, i) => (
+          <div
+            key={`skeleton-${i}`}
+            className="d-item col-lg-3 col-md-6 col-sm-6 col-xs-12"
             style={{ display: "block", backgroundSize: "cover" }}
-          />
+          >
+            <NftCardSkeleton />
+          </div>
         ))}
-      {!loading && error && (
-        <div className="col-md-12 text-center py-4">
-          <p>{error}</p>
-        </div>
+      {error && (
+        <div className="col-md-12 text-center py-4 text-danger">{error}</div>
       )}
       {!loading &&
         !error &&
         visibleItems.map((item) => (
-          <NftItemCard
-            key={item.id ?? item.nftId}
-            item={item}
-            columnClassName={exploreColumnClass}
-            columnStyle={{ display: "block", backgroundSize: "cover" }}
-          />
+          <div
+            key={item.id}
+            className="d-item col-lg-3 col-md-6 col-sm-6 col-xs-12"
+            style={{ display: "block", backgroundSize: "cover" }}
+          >
+            <NftItemCard
+              authorImage={item.authorImage}
+              nftImage={item.nftImage}
+              title={item.title}
+              price={item.price}
+              likes={item.likes}
+              expiryDate={item.expiryDate}
+              nftId={item.nftId}
+              authorId={item.authorId}
+            />
+          </div>
         ))}
-      {!loading && !error && canLoadMore && (
+      {canLoadMore && (
         <div className="col-md-12 text-center">
           <button
             type="button"
@@ -81,11 +127,6 @@ const ExploreItems = ({ notice = "" }) => {
           >
             Load more
           </button>
-        </div>
-      )}
-      {!loading && !error && uniqueItems.length === 0 && (
-        <div className="col-md-12 text-center py-4">
-          <p>No items found.</p>
         </div>
       )}
     </>

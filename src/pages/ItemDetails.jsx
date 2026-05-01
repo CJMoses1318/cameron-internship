@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import EthImage from "../images/ethereum.svg";
-import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import AuthorImage from "../images/author_thumbnail.jpg";
 import nftImage from "../images/nftImage.jpg";
 import ItemDetailsSkeleton from "../components/item/ItemDetailsSkeleton";
@@ -15,8 +15,14 @@ const formatEthAmount = (price) => {
   return numericPrice.toFixed(2);
 };
 
+const normalizeId = (value) =>
+  value !== undefined && value !== null && String(value).trim() !== ""
+    ? String(value)
+    : "";
+
 const ItemDetails = () => {
-  const { nftId } = useParams();
+  const { itemId } = useParams();
+  const [searchParams] = useSearchParams();
   const location = useLocation();
   const navigate = useNavigate();
   const { uniqueItems, loading, error } = useExploreNfts();
@@ -24,49 +30,57 @@ const ItemDetails = () => {
   const [creatorName, setCreatorName] = useState(null);
   const [ownerName, setOwnerName] = useState(null);
 
+  const targetId = useMemo(() => {
+    const fromQuery = normalizeId(searchParams.get("nftId"));
+    return normalizeId(itemId) || fromQuery;
+  }, [itemId, searchParams]);
+
   const item = useMemo(() => {
     const routeStateItem = location.state?.selectedItem;
     if (routeStateItem && typeof routeStateItem === "object") {
-      const stateNftId = routeStateItem.nftId ?? routeStateItem.id;
-      if (!nftId || String(stateNftId) === String(nftId)) {
+      const stateId = normalizeId(routeStateItem.nftId ?? routeStateItem.id);
+      if (!targetId || stateId === targetId) {
         return routeStateItem;
       }
     }
-    if (!nftId) {
+
+    if (!targetId) {
       return uniqueItems[0];
     }
-    return uniqueItems.find(
-      (row) =>
-        String(row.nftId) === String(nftId) || String(row.id) === String(nftId)
-    );
-  }, [uniqueItems, nftId, location.state]);
+
+    return uniqueItems.find((row) => {
+      const rowNftId = normalizeId(row.nftId);
+      const rowId = normalizeId(row.id);
+      return rowNftId === targetId || rowId === targetId;
+    });
+  }, [location.state, targetId, uniqueItems]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, [nftId]);
+  }, [targetId]);
 
   useEffect(() => {
-    if (!loading && !error && nftId && !item) {
+    if (!loading && !error && targetId && !item) {
       navigate("/explore", {
         replace: true,
         state: { notice: "Item not found." },
       });
     }
-  }, [loading, error, nftId, item, navigate]);
+  }, [loading, error, targetId, item, navigate]);
 
   const sortedAuthorIds = useMemo(() => {
     const ids = Array.from(
       new Set(
         uniqueItems
           .map((row) => row.authorId)
-          .filter((id) => id !== undefined && id !== null && id !== "")
-          .map(String)
+          .map(normalizeId)
+          .filter(Boolean)
       )
     );
     return ids.sort((a, b) => Number(a) - Number(b));
   }, [uniqueItems]);
 
-  const creatorAuthorId = item?.authorId ? String(item.authorId) : "";
+  const creatorAuthorId = item ? normalizeId(item.authorId) : "";
 
   const ownerAuthorId = useMemo(() => {
     if (!item) {
@@ -75,11 +89,13 @@ const ItemDetails = () => {
     if (sortedAuthorIds.length === 0) {
       return creatorAuthorId;
     }
+
     const nftNumber = Number(item.nftId ?? item.id);
     const baseIndex = Number.isFinite(nftNumber)
       ? Math.abs(Math.floor(nftNumber)) % sortedAuthorIds.length
       : 0;
     let selectedId = sortedAuthorIds[baseIndex];
+
     if (
       sortedAuthorIds.length > 1 &&
       creatorAuthorId &&
@@ -101,9 +117,7 @@ const ItemDetails = () => {
     let cancelled = false;
 
     const requiredAuthorIds = Array.from(
-      new Set(
-        [...sortedAuthorIds, creatorAuthorId, ownerAuthorId].filter(Boolean)
-      )
+      new Set([...sortedAuthorIds, creatorAuthorId, ownerAuthorId].filter(Boolean))
     );
 
     const loadAuthorNames = async () => {
@@ -120,6 +134,7 @@ const ItemDetails = () => {
               if (!response.ok) {
                 return [authorId, null];
               }
+
               const data = await response.json();
               const name =
                 typeof data.authorName === "string" && data.authorName.trim()
@@ -212,7 +227,7 @@ const ItemDetails = () => {
   const preview = item.nftImage || nftImage;
   const creatorImage =
     authorMetaById[creatorAuthorId]?.image || item.authorImage || AuthorImage;
-  const ownerImage = authorMetaById[ownerAuthorId]?.image || AuthorImage;
+  const ownerImage = authorMetaById[ownerAuthorId]?.image || item.ownerImage || AuthorImage;
   const creatorPath = creatorAuthorId ? `/author/${creatorAuthorId}` : "/author";
   const ownerPath = ownerAuthorId ? `/author/${ownerAuthorId}` : creatorPath;
   const fallbackCreatorLabel = `Creator #${
@@ -221,11 +236,15 @@ const ItemDetails = () => {
   const fallbackOwnerLabel = `Owner #${
     String(ownerAuthorId || creatorAuthorId).slice(-6) || "—"
   }`;
-  const creatorDisplayName = creatorName?.trim() || fallbackCreatorLabel;
-  const ownerDisplayName = ownerName?.trim() || fallbackOwnerLabel;
-  const priceText = formatEthAmount(item.price);
+  const creatorDisplayName = creatorName?.trim() || item.creatorName || fallbackCreatorLabel;
+  const ownerDisplayName = ownerName?.trim() || item.ownerName || fallbackOwnerLabel;
+  const priceText = formatEthAmount(item.price ?? item.nftPrice ?? item.floorPrice);
   const likes = Number.isFinite(Number(item.likes)) ? Number(item.likes) : 0;
-  const views = likes;
+  const views = Number.isFinite(Number(item.views))
+    ? Number(item.views)
+    : Number.isFinite(Number(item.viewCount))
+      ? Number(item.viewCount)
+      : likes;
 
   const handleAvatarError = (event) => {
     if (event.currentTarget.src !== AuthorImage) {
@@ -261,10 +280,7 @@ const ItemDetails = () => {
                       {likes}
                     </div>
                   </div>
-                  <p>
-                    Details for {title}. This piece is listed on the marketplace
-                    with verified creator attribution.
-                  </p>
+                  <p>{item.description || `Details for ${title}.`}</p>
                   <div className="d-flex flex-row">
                     <div className="mr40">
                       <h6>Owner</h6>

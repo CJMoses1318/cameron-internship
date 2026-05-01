@@ -2,15 +2,13 @@ import React, { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import SubHeader from "../images/subheader.jpg";
 import ExploreItems from "../components/explore/ExploreItems";
+import useScrollToTopOnNavigate from "../hooks/useScrollToTopOnNavigate";
 
 const Explore = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const notice = location.state?.notice || "";
-
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
+  useScrollToTopOnNavigate();
 
   useEffect(() => {
     if (!notice) {

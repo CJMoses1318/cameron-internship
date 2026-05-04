@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { useCountdown } from "../../hooks/useCountdown";
 import AuthorImage from "../../images/author_thumbnail.jpg";
 import nftImage from "../../images/nftImage.jpg";
 
@@ -9,24 +10,6 @@ const formatPrice = (price) => {
     return "0.00 ETH";
   }
   return `${numericPrice.toFixed(2)} ETH`;
-};
-
-const formatCountdown = (expiryDate) => {
-  const targetTime = Number(expiryDate);
-  if (Number.isNaN(targetTime)) {
-    return "Expired";
-  }
-
-  const timeLeftMs = targetTime - Date.now();
-  if (timeLeftMs <= 0) {
-    return "Expired";
-  }
-
-  const totalSeconds = Math.floor(timeLeftMs / 1000);
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-  return `${hours}h ${minutes}m ${seconds}s`;
 };
 
 const stopCardNavigation = (event) => {
@@ -53,7 +36,7 @@ const NftItemCard = ({
   const likes = Number.isFinite(Number(item.likes)) ? Number(item.likes) : 0;
   const authorImage = item.authorImage || AuthorImage;
   const previewImage = item.nftImage || nftImage;
-  const countdownText = formatCountdown(item.expiryDate);
+  const countdownText = useCountdown(item.expiryDate);
 
   const authorPath =
     item.authorId !== undefined && item.authorId !== null && item.authorId !== ""

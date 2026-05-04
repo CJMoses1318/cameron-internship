@@ -43,15 +43,15 @@ const NftItemCard = ({
             <button type="button">Buy Now</button>
             <div className="nft__item_share">
               <h4>Share</h4>
-              <a href="" target="_blank" rel="noreferrer">
+              <button type="button" aria-label="Share on Facebook">
                 <i className="fa fa-facebook fa-lg"></i>
-              </a>
-              <a href="" target="_blank" rel="noreferrer">
+              </button>
+              <button type="button" aria-label="Share on Twitter">
                 <i className="fa fa-twitter fa-lg"></i>
-              </a>
-              <a href="">
+              </button>
+              <button type="button" aria-label="Share by email">
                 <i className="fa fa-envelope fa-lg"></i>
-              </a>
+              </button>
             </div>
           </div>
         </div>
